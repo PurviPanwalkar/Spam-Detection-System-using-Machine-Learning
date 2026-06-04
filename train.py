@@ -1,177 +1,162 @@
-# ==============================
-# 📧 Spam Detection - Training Script
-# ==============================
-
-# ==============================
-# 1. Import Libraries
-# ==============================
-import pandas as pd
-import numpy as np
-import re
+import json
 import pickle
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
-
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
-
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
+
+from utils import clean_text
 
 
-# ==============================
-# 2. Load Dataset
-# ==============================
-df = pd.read_csv('spam.csv', encoding='latin-1')
-
-# Keep required columns
-df = df[['v1', 'v2']]
-
-# Rename columns
-df.columns = ['label', 'message']
-
-# Convert labels (ham=0, spam=1)
-df['label'] = df['label'].map({'ham': 0, 'spam': 1})
-
-# Remove duplicates
-df.drop_duplicates(inplace=True)
-
-print("Dataset Shape:", df.shape)
-print(df.head())
+BASE_DIR = Path(__file__).parent
+MODELS_DIR = BASE_DIR / "models"
+OUTPUTS_DIR = BASE_DIR / "outputs"
+MODELS_DIR.mkdir(exist_ok=True)
+OUTPUTS_DIR.mkdir(exist_ok=True)
 
 
-# ==============================
-# 3. Text Preprocessing
-# ==============================
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r'http\S+', '', text)   # remove URLs
-    text = re.sub(r'\W', ' ', text)       # remove special chars
-    text = re.sub(r'\d', '', text)        # remove numbers
-    text = re.sub(r'\s+', ' ', text)      # remove extra spaces
-    return text
-
-df['message'] = df['message'].apply(clean_text)
+def load_dataset():
+    df = pd.read_csv(BASE_DIR / "spam.csv", encoding="latin-1")
+    df = df[["v1", "v2"]]
+    df.columns = ["label", "message"]
+    df["label"] = df["label"].map({"ham": 0, "spam": 1})
+    df.drop_duplicates(inplace=True)
+    df["message"] = df["message"].apply(clean_text)
+    return df
 
 
-# ==============================
-# 4. Train-Test Split
-# ==============================
-X = df['message']
-y = df['label']
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-
-# ==============================
-# 5. TF-IDF Vectorization
-# ==============================
-vectorizer = TfidfVectorizer(stop_words='english', max_features=3000)
-
-X_train_vec = vectorizer.fit_transform(X_train)
-X_test_vec = vectorizer.transform(X_test)
+def save_confusion_matrix(matrix):
+    plt.figure(figsize=(6, 4))
+    sns.heatmap(
+        matrix,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=["Ham", "Spam"],
+        yticklabels=["Ham", "Spam"],
+    )
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.tight_layout()
+    plt.savefig(OUTPUTS_DIR / "confusion_matrix.png")
+    plt.close()
 
 
-# ==============================
-# 6. Train Models
-# ==============================
-nb_model = MultinomialNB()
-lr_model = LogisticRegression()
+def save_accuracy_chart(scores):
+    names = [score["model"] for score in scores]
+    accuracies = [score["accuracy"] for score in scores]
 
-nb_model.fit(X_train_vec, y_train)
-lr_model.fit(X_train_vec, y_train)
-
-
-# ==============================
-# 7. Predictions
-# ==============================
-nb_pred = nb_model.predict(X_test_vec)
-lr_pred = lr_model.predict(X_test_vec)
+    plt.figure(figsize=(8, 4))
+    sns.barplot(x=names, y=accuracies)
+    plt.title("Model Accuracy Comparison")
+    plt.ylabel("Accuracy")
+    plt.ylim(0, 1)
+    plt.xticks(rotation=15)
+    plt.tight_layout()
+    plt.savefig(OUTPUTS_DIR / "model_accuracy.png")
+    plt.close()
 
 
-# ==============================
-# 8. Accuracy Comparison
-# ==============================
-nb_acc = accuracy_score(y_test, nb_pred)
-lr_acc = accuracy_score(y_test, lr_pred)
-
-print("\n📊 Model Accuracy:")
-print("Naive Bayes:", nb_acc)
-print("Logistic Regression:", lr_acc)
-
-
-# ==============================
-# 9. Detailed Report
-# ==============================
-print("\n📄 Classification Report (Naive Bayes):")
-print(classification_report(y_test, nb_pred))
-
-print("\n📄 Confusion Matrix:")
-cm = confusion_matrix(y_test, nb_pred)
-print(cm)
+def save_class_distribution(df):
+    plt.figure(figsize=(5, 4))
+    sns.countplot(x="label", data=df)
+    plt.xticks([0, 1], ["Ham", "Spam"])
+    plt.title("Spam vs Ham Distribution")
+    plt.xlabel("Class")
+    plt.ylabel("Count")
+    plt.tight_layout()
+    plt.savefig(OUTPUTS_DIR / "class_distribution.png")
+    plt.close()
 
 
-# ==============================
-# 10. Visualization
-# ==============================
+def main():
+    df = load_dataset()
 
-# 🔹 Confusion Matrix Heatmap
-plt.figure()
-sns.heatmap(cm, annot=True, fmt='d',
-            xticklabels=['Ham', 'Spam'],
-            yticklabels=['Ham', 'Spam'])
-plt.title("Confusion Matrix")
-plt.xlabel("Predicted")
-plt.ylabel("Actual")
-plt.show()
+    print("Dataset Shape:", df.shape)
+    print(df.head())
+
+    X = df["message"]
+    y = df["label"]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    vectorizer = TfidfVectorizer(stop_words="english", max_features=5000, ngram_range=(1, 2))
+    X_train_vec = vectorizer.fit_transform(X_train)
+    X_test_vec = vectorizer.transform(X_test)
+
+    models = {
+        "Naive Bayes": MultinomialNB(),
+        "Logistic Regression": LogisticRegression(max_iter=1000),
+        "Support Vector Machine": LinearSVC(),
+        "Random Forest": RandomForestClassifier(n_estimators=120, random_state=42),
+    }
+
+    scores = []
+    trained_models = {}
+
+    for name, model in models.items():
+        model.fit(X_train_vec, y_train)
+        predictions = model.predict(X_test_vec)
+        accuracy = accuracy_score(y_test, predictions)
+
+        trained_models[name] = model
+        scores.append({"model": name, "accuracy": round(float(accuracy), 4)})
+        print(f"{name}: {accuracy:.4f}")
+
+    best_score = max(scores, key=lambda item: item["accuracy"])
+    best_model_name = best_score["model"]
+    best_model = trained_models[best_model_name]
+    best_predictions = best_model.predict(X_test_vec)
+    matrix = confusion_matrix(y_test, best_predictions)
+    report = classification_report(y_test, best_predictions, output_dict=True)
+
+    print("\nBest Model:", best_model_name)
+    print("\nClassification Report:")
+    print(classification_report(y_test, best_predictions))
+    print("\nConfusion Matrix:")
+    print(matrix)
+
+    with open(MODELS_DIR / "spam_model.pkl", "wb") as file:
+        pickle.dump(best_model, file)
+
+    with open(MODELS_DIR / "vectorizer.pkl", "wb") as file:
+        pickle.dump(vectorizer, file)
+
+    with open(BASE_DIR / "spam_model.pkl", "wb") as file:
+        pickle.dump(best_model, file)
+
+    with open(BASE_DIR / "vectorizer.pkl", "wb") as file:
+        pickle.dump(vectorizer, file)
+
+    metrics = {
+        "best_model": best_model_name,
+        "best_accuracy": best_score["accuracy"],
+        "model_scores": scores,
+        "classification_report": report,
+    }
+
+    with open(OUTPUTS_DIR / "metrics.json", "w", encoding="utf-8") as file:
+        json.dump(metrics, file, indent=2)
+
+    pd.DataFrame(scores).to_csv(OUTPUTS_DIR / "model_scores.csv", index=False)
+
+    save_confusion_matrix(matrix)
+    save_accuracy_chart(scores)
+    save_class_distribution(df)
+
+    print("\nModel, vectorizer, metrics, and charts saved successfully.")
 
 
-# 🔹 Model Accuracy Comparison
-models = ['Naive Bayes', 'Logistic Regression']
-scores = [nb_acc, lr_acc]
-
-plt.figure()
-plt.bar(models, scores)
-plt.title("Model Accuracy Comparison")
-plt.ylabel("Accuracy")
-plt.show()
-
-
-# 🔹 Class Distribution
-df['label'].value_counts().plot(kind='bar')
-plt.xticks([0, 1], ['Ham', 'Spam'])
-plt.title("Spam vs Ham Distribution")
-plt.xlabel("Class")
-plt.ylabel("Count")
-plt.show()
-
-
-# ==============================
-# 11. Save Best Model
-# ==============================
-best_model = lr_model   # Logistic Regression performs better
-
-pickle.dump(best_model, open('spam_model.pkl', 'wb'))
-pickle.dump(vectorizer, open('vectorizer.pkl', 'wb'))
-
-print("\n✅ Model and Vectorizer saved successfully!")
-
-
-# ==============================
-# 12. Test Prediction Function
-# ==============================
-def predict_message(msg):
-    msg = clean_text(msg)
-    vec = vectorizer.transform([msg])
-    result = best_model.predict(vec)
-    
-    return "Spam 🚫" if result[0] == 1 else "Ham ✅"
-
-# Test examples
-print("\n🔍 Sample Predictions:")
-print(predict_message("Congratulations! You won a free iPhone"))
-print(predict_message("Hey, are you coming to class?"))
+if __name__ == "__main__":
+    main()
