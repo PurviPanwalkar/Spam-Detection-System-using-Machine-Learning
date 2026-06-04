@@ -1,0 +1,5 @@
+model,accuracy
+Naive Bayes,0.9662
+Logistic Regression,0.9536
+Support Vector Machine,0.9807
+Random Forest,0.9758

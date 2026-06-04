@@ -1,0 +1,49 @@
+{
+  "best_model": "Support Vector Machine",
+  "best_accuracy": 0.9807,
+  "model_scores": [
+    {
+      "model": "Naive Bayes",
+      "accuracy": 0.9662
+    },
+    {
+      "model": "Logistic Regression",
+      "accuracy": 0.9536
+    },
+    {
+      "model": "Support Vector Machine",
+      "accuracy": 0.9807
+    },
+    {
+      "model": "Random Forest",
+      "accuracy": 0.9758
+    }
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.9804134929270947,
+      "recall": 0.9977851605758582,
+      "f1-score": 0.9890230515916575,
+      "support": 903.0
+    },
+    "1": {
+      "precision": 0.9826086956521739,
+      "recall": 0.8625954198473282,
+      "f1-score": 0.9186991869918699,
+      "support": 131.0
+    },
+    "accuracy": 0.9806576402321083,
+    "macro avg": {
+      "precision": 0.9815110942896343,
+      "recall": 0.9301902902115933,
+      "f1-score": 0.9538611192917636,
+      "support": 1034.0
+    },
+    "weighted avg": {
+      "precision": 0.9806916085528059,
+      "recall": 0.9806576402321083,
+      "f1-score": 0.9801135484363653,
+      "support": 1034.0
+    }
+  }
+}

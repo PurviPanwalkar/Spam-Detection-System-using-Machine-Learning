@@ -1,0 +1,10 @@
+date_time,message,prediction,confidence
+2026-05-28 21:13:33,URGENT! Your account has been selected for a cash prize. Call now.,Spam,67.55
+2026-05-28 21:14:51,"Hey, are you coming to class today?",Ham,80.94
+2026-05-28 21:20:26,URGENT! Your account has been selected for a cash prize. Call now.,Spam,67.55
+2026-05-28 21:32:17,"message
+Congratulations you won a free prize
+Hey are you coming to class today
+Urgent call now to claim your reward",Spam,72.05
+2026-05-28 21:33:04,"Hey are you coming to class today
+",Ham,80.94
