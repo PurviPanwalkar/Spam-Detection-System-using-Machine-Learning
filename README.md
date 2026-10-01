@@ -1,4 +1,4 @@
-# Spam Detection System using Machine Learning
+[# Spam Detection System using Machine Learning
 
 A Streamlit-based spam detection app that classifies SMS or text messages as **Spam** or **Ham** using machine learning. The project includes text preprocessing, model training, model comparison, single-message prediction, batch CSV prediction, confidence scoring, feedback collection, and visual performance reports.
 
@@ -254,14 +254,11 @@ message
 
 ---
 
-# 📸 Screenshots
+# 🎥 Project Demo
 
-Add screenshots of your Streamlit app here after running the project.
+Watch the complete demonstration of the Spam Detection System:
 
-```md
-![App Screenshot](screenshots/app.png)
-```
-
+[▶️ Watch Project Demo Video](./spam-detection-demo.webm)
 ---
 
 # 🚀 Future Improvements
@@ -289,3 +286,4 @@ Add screenshots of your Streamlit app here after running the project.
 # 📜 License
 
 This project is open source and available for learning and educational use.
+](https://spam-detection-system-using-machine-learning-26.streamlit.app/)
